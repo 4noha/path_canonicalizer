@@ -29,12 +29,13 @@
 #define PATH_CANON_NUMBER_SIGN '#'
 #define PATH_CANON_APOSTROPHE  '\''
 #define PATH_CANON_ASTERISK    '*'
-#define PATH_CANON_PERCENT     '%'
 #define PATH_CANON_PERIOD      '.'
-#define PATH_CANON_SRASH       '/'
 #define PATH_CANON_LEFT_PARENTHESIS  '('
 #define PATH_CANON_RIGHT_PARENTHESIS ')'
 #define PATH_CANON_REVERSE_SOLIDUS   '\\'
+
+#define PATH_CANON_PERCENT     '%'
+#define PATH_CANON_SRASH       '/'
 
 
 static inline unsigned char percentdecode( char* byte )
@@ -122,6 +123,22 @@ static inline int checkPercentUtf8( char** dest, char** ptr )
     return -1;
 }
 
+static inline int rfc3986PathCharactor( char chr )
+{
+    if( PATH_CANON_ASCII_PRINTABLE_CHARACTORS( chr ) &&
+        chr != PATH_CANON_EXCLAMATION &&
+        chr != PATH_CANON_NUMBER_SIGN &&
+        chr != PATH_CANON_APOSTROPHE &&
+        chr != PATH_CANON_ASTERISK &&
+        chr != PATH_CANON_LEFT_PARENTHESIS &&
+        chr != PATH_CANON_RIGHT_PARENTHESIS &&
+        chr != PATH_CANON_REVERSE_SOLIDUS
+    ){
+        return 1;
+    }
+    return 0;
+}
+
 static inline char* canonicalize( const char *ptr, size_t *len )
 {
     char *path = NULL;
@@ -169,15 +186,7 @@ static inline char* canonicalize( const char *ptr, size_t *len )
 
         while ( *ptr && *ptr != PATH_CANON_SRASH )
         {
-            if( !PATH_CANON_ASCII_PRINTABLE_CHARACTORS(*ptr) ||
-                *ptr == PATH_CANON_EXCLAMATION ||
-                *ptr == PATH_CANON_NUMBER_SIGN ||
-                *ptr == PATH_CANON_APOSTROPHE ||
-                *ptr == PATH_CANON_ASTERISK ||
-                *ptr == PATH_CANON_LEFT_PARENTHESIS ||
-                *ptr == PATH_CANON_RIGHT_PARENTHESIS ||
-                *ptr == PATH_CANON_REVERSE_SOLIDUS
-            ){
+            if( !rfc3986PathCharactor( *ptr ) ){
                 free( path );
                 len = NULL;
                 errno = EINVAL;
