@@ -34,6 +34,7 @@
 #define PATH_CANON_RIGHT_PARENTHESIS ')'
 #define PATH_CANON_REVERSE_SOLIDUS   '\\'
 
+#define PATH_CANON_QUESTION    '?'
 #define PATH_CANON_PERCENT     '%'
 #define PATH_CANON_SRASH       '/'
 
@@ -139,7 +140,7 @@ static inline int rfc3986PathCharactor( char chr )
     return 0;
 }
 
-static inline char* canonicalize( const char *ptr, size_t *len )
+static inline char* path_canon_canonicalize( const char *ptr, size_t *len, int paramflg )
 {
     char *path = NULL;
     char *dest = NULL;
@@ -186,7 +187,8 @@ static inline char* canonicalize( const char *ptr, size_t *len )
 
         while ( *ptr && *ptr != PATH_CANON_SRASH )
         {
-            if( !rfc3986PathCharactor( *ptr ) ){
+            if( !rfc3986PathCharactor( *ptr ) ||
+                ( *ptr == PATH_CANON_QUESTION && !paramflg ) ){
                 free( path );
                 len = NULL;
                 errno = EINVAL;
@@ -218,5 +220,9 @@ static inline char* canonicalize( const char *ptr, size_t *len )
     *len = dest - path;
     return path;
 }
+#define PATH_CANON_CANON1( ptr, len )           path_canon_canonicalize( ptr, (size_t *)len, 0 )
+#define PATH_CANON_CANON2( ptr, len, paramflg ) path_canon_canonicalize( ptr, (size_t *)len, (int)paramflg )
+#define PATH_CANON_GET_NAME( _1, _2, PATH_CANON_NAME, ... ) PATH_CANON_NAME
+#define canonicalize( ptr, ... ) PATH_CANON_GET_NAME( __VA_ARGS__, PATH_CANON_CANON2, PATH_CANON_CANON1 )( ptr, __VA_ARGS__ )
 
 #endif
