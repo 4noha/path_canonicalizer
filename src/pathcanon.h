@@ -39,7 +39,7 @@
 #define PATH_CANON_SRASH       '/'
 
 
-static inline unsigned char percentdecode( char* byte )
+static inline unsigned char pcl_percentdecode( char* byte )
 {
     static const char hex2dec[256] = {
         -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
@@ -70,7 +70,7 @@ static inline unsigned char percentdecode( char* byte )
     return -1;
 }
 
-static inline unsigned char encUrlCopy( char** dest, char** ptr, int cnt )
+static inline unsigned char path_canon_per8_copy( char** dest, char** ptr, int cnt )
 {
     unsigned char byte;
 
@@ -85,9 +85,8 @@ static inline unsigned char encUrlCopy( char** dest, char** ptr, int cnt )
     }
 
     // 2nd byte later
-    byte = percentdecode( *ptr );
     for(; cnt > 1; cnt--){
-        byte = percentdecode( *ptr );
+        byte = pcl_percentdecode( *ptr );
         if( byte > 127 && byte < 192 ){
             ( *dest )[0] = ( *ptr )[0];
             ( *dest )[1] = ( *ptr )[1];
@@ -102,29 +101,29 @@ static inline unsigned char encUrlCopy( char** dest, char** ptr, int cnt )
     return 0;
 }
 
-static inline int checkPercentUtf8( char** dest, char** ptr )
+static inline int pcl_check_percented_utf8( char** dest, char** ptr )
 {
-    unsigned char firstbyte = percentdecode( *ptr );
+    unsigned char firstbyte = pcl_percentdecode( *ptr );
     // UTF-8 length check
     if( firstbyte >= 0 && firstbyte < 248 ){
         if( firstbyte < 128 ){
-            return encUrlCopy( dest, ptr, 1 );
+            return path_canon_per8_copy( dest, ptr, 1 );
         }else if( firstbyte < 194 ){
             // UTF-8 out of range
             return -1;
         }else if( firstbyte < 224 ){
-            return encUrlCopy( dest, ptr, 2 );
+            return path_canon_per8_copy( dest, ptr, 2 );
         }else if( firstbyte < 240 ){
-            return encUrlCopy( dest, ptr, 3 );
+            return path_canon_per8_copy( dest, ptr, 3 );
         }else{
-            return encUrlCopy( dest, ptr, 4 );
+            return path_canon_per8_copy( dest, ptr, 4 );
         }
     }
     // UTF-8 out of range
     return -1;
 }
 
-static inline int rfc3986PathCharactor( char chr )
+static inline int pcl_rfc3986_path_charactor( char chr )
 {
     if( PATH_CANON_ASCII_PRINTABLE_CHARACTORS( chr ) &&
         chr != PATH_CANON_EXCLAMATION &&
@@ -187,7 +186,7 @@ static inline char* path_canon_canonicalize( const char *ptr, size_t *len, int p
 
         while ( *ptr && *ptr != PATH_CANON_SRASH )
         {
-            if( !rfc3986PathCharactor( *ptr ) ||
+            if( !pcl_rfc3986_path_charactor( *ptr ) ||
                 ( *ptr == PATH_CANON_QUESTION && !paramflg ) ){
                 free( path );
                 len = NULL;
@@ -196,7 +195,7 @@ static inline char* path_canon_canonicalize( const char *ptr, size_t *len, int p
             }
 
             if( *ptr == PATH_CANON_PERCENT ){
-                if( checkPercentUtf8( &dest, (char **) &ptr ) ){
+                if( pcl_check_percented_utf8( &dest, (char **) &ptr ) ){
                     free( path );
                     len = NULL;
                     errno = EINVAL;
@@ -223,6 +222,6 @@ static inline char* path_canon_canonicalize( const char *ptr, size_t *len, int p
 #define PATH_CANON_CANON1( ptr, len )           path_canon_canonicalize( ptr, (size_t *)len, 0 )
 #define PATH_CANON_CANON2( ptr, len, paramflg ) path_canon_canonicalize( ptr, (size_t *)len, (int)paramflg )
 #define PATH_CANON_GET_NAME( _1, _2, PATH_CANON_NAME, ... ) PATH_CANON_NAME
-#define canonicalize( ptr, ... ) PATH_CANON_GET_NAME( __VA_ARGS__, PATH_CANON_CANON2, PATH_CANON_CANON1 )( ptr, __VA_ARGS__ )
+#define pcl_canonicalize( ptr, ... ) PATH_CANON_GET_NAME( __VA_ARGS__, PATH_CANON_CANON2, PATH_CANON_CANON1 )( ptr, __VA_ARGS__ )
 
 #endif
