@@ -219,6 +219,7 @@ static inline char* path_canon_canonicalize( const char *ptr, size_t *len, int p
     *len = dest - path;
     return path;
 }
+
 #define PATH_CANON_CANON1( ptr, len )           path_canon_canonicalize( ptr, (size_t *)len, 0 )
 #define PATH_CANON_CANON2( ptr, len, paramflg ) path_canon_canonicalize( ptr, (size_t *)len, (int)paramflg )
 #define PATH_CANON_GET_NAME( _1, _2, PATH_CANON_NAME, ... ) PATH_CANON_NAME
